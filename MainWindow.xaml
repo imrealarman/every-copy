@@ -1,0 +1,368 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Window
+    x:Class="EveryCopy.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:m="using:EveryCopy.Models"
+    xmlns:local="using:EveryCopy">
+
+    <Grid x:Name="Root"
+          Background="{ThemeResource ChromeBrush}"
+          AllowDrop="True"
+          DragOver="Root_DragOver"
+          Drop="Root_Drop">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="40" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Title bar: the window's own caption buttons are drawn over the right edge -->
+        <Grid x:Name="TitleBar" Grid.Row="0" Background="{ThemeResource ChromeBrush}" ColumnSpacing="10" Padding="14,0,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Image x:Name="TitleIcon" Width="18" Height="18" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="1" Text="EveryCopy" VerticalAlignment="Center" FontSize="12" />
+        </Grid>
+
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="380" />
+                <ColumnDefinition Width="1" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- New transfer -->
+            <Grid Grid.Column="0" Background="{ThemeResource RailBrush}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Padding="20,12,20,16" Spacing="8">
+                        <TextBlock Text="NEW TRANSFER" Style="{StaticResource PanelHeader}" Margin="0,0,0,2" />
+
+                        <Border Background="{ThemeResource TileBrush}" BorderBrush="{ThemeResource BorderBrush2}" BorderThickness="1"
+                                CornerRadius="8" Padding="16,18">
+                            <StackPanel Spacing="10" HorizontalAlignment="Center">
+                                <FontIcon Glyph="&#xE896;" FontSize="26" Foreground="{StaticResource AccentBrush}" />
+                                <TextBlock Text="Drop files or folders anywhere" HorizontalAlignment="Center" FontSize="13" />
+                                <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
+                                    <Button Style="{StaticResource SecondaryButton}" Content="Add files" Click="AddFiles_Click" />
+                                    <Button Style="{StaticResource SecondaryButton}" Content="Add folder" Click="AddFolder_Click" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <Grid x:Name="SourcesHeader" Visibility="Collapsed" Margin="0,6,0,0">
+                            <TextBlock x:Name="SourcesCount" Style="{StaticResource MutedText}" VerticalAlignment="Center" />
+                            <Button Style="{StaticResource GhostButton}" Content="Clear" HorizontalAlignment="Right" MinHeight="24" Padding="8,0" Click="ClearSources_Click" />
+                        </Grid>
+                        <ListView x:Name="SourceList"
+                                  SelectionMode="None"
+                                  ItemContainerStyle="{StaticResource BareListViewItem}"
+                                  MaxHeight="170"
+                                  Visibility="Collapsed">
+                            <ListView.ItemTemplate>
+                                <DataTemplate x:DataType="m:SourceEntry">
+                                    <Grid Height="40" ColumnSpacing="10" Padding="4,0,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <FontIcon Glyph="{x:Bind Glyph}" FontSize="16" Foreground="{ThemeResource TextMutedBrush}" />
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBlock Text="{x:Bind Name}" FontSize="13" TextReadingOrder="DetectFromContent" TextTrimming="CharacterEllipsis" />
+                                            <TextBlock Text="{x:Bind Location}" Style="{StaticResource MutedText}" TextTrimming="CharacterEllipsis" />
+                                        </StackPanel>
+                                        <Button Grid.Column="2" Style="{StaticResource ToolButton}" Width="30" Height="30" MinHeight="30"
+                                                Tag="{x:Bind}" Click="RemoveSource_Click" ToolTipService.ToolTip="Remove from this transfer">
+                                            <FontIcon Glyph="&#xE711;" FontSize="11" />
+                                        </Button>
+                                    </Grid>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+
+                        <TextBlock Text="DESTINATION" Style="{StaticResource PanelHeader}" Margin="0,12,0,0" />
+                        <Grid ColumnSpacing="8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBox x:Name="DestBox" PlaceholderText="Choose or paste a folder" MinHeight="32" TextChanged="DestBox_TextChanged" />
+                            <Button Grid.Column="1" Style="{StaticResource SecondaryButton}" Content="Browse" Click="Browse_Click" />
+                        </Grid>
+                        <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,-2,0,0">
+                            <Button x:Name="TestSpeedButton" Style="{StaticResource GhostButton}" Content="Test destination speed" MinHeight="26" Padding="6,0" Click="TestSpeed_Click"
+                                    ToolTipService.ToolTip="Writes a 256 MB temporary file to the destination and times it" />
+                            <TextBlock x:Name="SpeedResult" Style="{StaticResource MutedText}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                        </StackPanel>
+
+                        <TextBlock Text="ACTION" Style="{StaticResource PanelHeader}" Margin="0,12,0,0" />
+                        <Grid ColumnSpacing="8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Button x:Name="CopyModeButton" Style="{StaticResource ChipButtonOn}" Content="Copy" HorizontalAlignment="Stretch" MinHeight="32" Click="CopyMode_Click"
+                                    ToolTipService.ToolTip="Keep the originals" />
+                            <Button x:Name="MoveModeButton" Grid.Column="1" Style="{StaticResource ChipButton}" Content="Move" HorizontalAlignment="Stretch" MinHeight="32" Click="MoveMode_Click"
+                                    ToolTipService.ToolTip="Delete the originals once they are copied (instant on the same drive)" />
+                        </Grid>
+
+                        <TextBlock Text="IF A FILE ALREADY EXISTS" Style="{StaticResource PanelHeader}" Margin="0,12,0,0" />
+                        <ComboBox x:Name="CollisionBox" HorizontalAlignment="Stretch" SelectionChanged="Option_Changed">
+                            <ComboBoxItem Content="Keep both (rename the new one)" />
+                            <ComboBoxItem Content="Overwrite" />
+                            <ComboBoxItem Content="Skip" />
+                            <ComboBoxItem Content="Overwrite only if older" />
+                        </ComboBox>
+
+                        <TextBlock Text="SPEED" Style="{StaticResource PanelHeader}" Margin="0,12,0,0" />
+                        <Grid ColumnSpacing="10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Files at once" VerticalAlignment="Center" />
+                            <ComboBox x:Name="ThreadsBox" Grid.Column="1" Width="100" SelectionChanged="Option_Changed"
+                                      ToolTipService.ToolTip="One by one is the safest. Auto overlaps small files only on solid-state drives and network shares. Higher numbers overlap small files for more speed; large files are always copied one at a time so the drive streams">
+                                <ComboBoxItem Content="Auto" />
+                                <ComboBoxItem Content="1 by 1" />
+                                <ComboBoxItem Content="2" />
+                                <ComboBoxItem Content="4" />
+                                <ComboBoxItem Content="8" />
+                                <ComboBoxItem Content="16" />
+                            </ComboBox>
+                        </Grid>
+                        <CheckBox x:Name="VerifyBox" Content="Verify every file afterwards" Click="Option_Changed" />
+                        <TextBlock Text="Reads both copies back and compares them byte for byte. Slower, safest." Style="{StaticResource MutedText}" TextWrapping="Wrap" Margin="28,-6,0,0" />
+
+                    </StackPanel>
+                </ScrollViewer>
+
+                <StackPanel Grid.Row="1" Padding="20,0,12,10" Spacing="2">
+                    <TextBlock x:Name="Hint" Foreground="#E5484D" TextWrapping="Wrap" Visibility="Collapsed" Margin="0,0,0,6" />
+                    <Button x:Name="StartButton" Style="{StaticResource PrimaryButton}" Content="Start" HorizontalAlignment="Stretch" Height="40"
+                            Margin="0,0,0,8" IsEnabled="False" Click="Start_Click" />
+                    <Expander Header="Settings" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Padding="12,6">
+                        <StackPanel Spacing="2">
+                            <CheckBox x:Name="AskBox" Content="Ask each time: EveryCopy or Windows copy" Click="AskBox_Click"
+                                      ToolTipService.ToolTip="When off, the last choice is used without asking. EveryCopy is the default." />
+                            <CheckBox x:Name="InterceptBox" Content="Use EveryCopy when I press Ctrl+V in Explorer" Click="InterceptBox_Click"
+                                      ToolTipService.ToolTip="Copy files in Explorer as usual (Ctrl+C or Ctrl+X); pasting them with Ctrl+V then runs through EveryCopy. Needs EveryCopy in the tray." />
+                            <CheckBox x:Name="PopupBox" Content="Show a small progress window for transfers started from Explorer" Click="PopupBox_Click"
+                                      ToolTipService.ToolTip="Instead of opening the whole app, a compact window shows the progress. It can switch to a detailed view." />
+                            <CheckBox x:Name="StartupBox" Content="Start EveryCopy with Windows (in the tray)" Click="StartupBox_Click" />
+                            <CheckBox x:Name="MenuBox" Content="Add to the Explorer right-click menu" Click="MenuBox_Click" />
+                            <Grid ColumnSpacing="10" Margin="0,6,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="When all transfers finish" VerticalAlignment="Center" />
+                                <ComboBox x:Name="WhenDoneBox" Grid.Column="1" Width="130" SelectionChanged="WhenDone_Changed">
+                                    <ComboBoxItem Content="Do nothing" />
+                                    <ComboBoxItem Content="Sleep" />
+                                    <ComboBoxItem Content="Shut down" />
+                                </ComboBox>
+                            </Grid>
+                            <Button x:Name="ThemeButton" Style="{StaticResource GhostButton}" Click="Theme_Click" Padding="4,0" Margin="0,4,0,0" />
+                        </StackPanel>
+                    </Expander>
+                    <Button Style="{StaticResource GhostButton}" Content="Exit EveryCopy" Click="Exit_Click" Padding="8,0" HorizontalAlignment="Left" />
+                </StackPanel>
+            </Grid>
+
+            <Border Grid.Column="1" Background="{ThemeResource BorderBrush1}" />
+
+            <!-- Queue -->
+            <Grid Grid.Column="2" Background="{ThemeResource CanvasBrush}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <Grid Margin="22,12,18,4">
+                    <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                        <TextBlock Text="QUEUE" Style="{StaticResource PanelHeader}" VerticalAlignment="Center" />
+                        <TextBlock x:Name="QueueCount" Style="{StaticResource MutedText}" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="4" HorizontalAlignment="Right">
+                        <Button x:Name="ClearFinishedButton" Style="{StaticResource GhostButton}" Content="Clear finished"
+                                MinHeight="28" Visibility="Collapsed" Click="ClearFinished_Click" />
+                        <Button Style="{StaticResource GhostButton}" Content="History" MinHeight="28" Click="History_Click" />
+                    </StackPanel>
+                </Grid>
+
+                <StackPanel x:Name="EmptyState" Grid.Row="1" VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="10">
+                    <FontIcon Glyph="&#xE8C8;" FontSize="40" Foreground="{ThemeResource BorderBrush2}" />
+                    <TextBlock Text="Nothing copying" FontSize="16" HorizontalAlignment="Center" />
+                    <TextBlock Text="Add files, pick a destination and press Start. Transfers run one after another." Style="{StaticResource MutedText}" HorizontalAlignment="Center" />
+                </StackPanel>
+
+                <ListView x:Name="JobList"
+                          Grid.Row="1"
+                          SelectionMode="None"
+                          ItemContainerStyle="{StaticResource BareListViewItem}"
+                          Padding="18,6,14,12">
+                    <ListView.ItemTemplate>
+                        <DataTemplate x:DataType="m:CopyJob">
+                            <Grid Background="{ThemeResource TileBrush}" BorderBrush="{ThemeResource BorderBrush1}" BorderThickness="1"
+                                  CornerRadius="8" Padding="16,12,12,12" Margin="0,0,0,10" RowSpacing="6">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <!-- The drive's colour down the left edge -->
+                                <Border Grid.RowSpan="8" Grid.ColumnSpan="2" HorizontalAlignment="Left" Width="5" Margin="-16,-12,0,-12" CornerRadius="8,0,0,8"
+                                        Background="{x:Bind local:Tints.BrushOf(DestColor), Mode=OneWay}" />
+
+                                <TextBlock Grid.Row="0" Grid.Column="0" TextReadingOrder="DetectFromContent" Text="{x:Bind Title, Mode=OneWay}" FontSize="15" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Spacing="10" Margin="0,0,6,0" VerticalAlignment="Center">
+                                    <Button Style="{StaticResource GhostButton}" Tag="{x:Bind}" Click="Rename_Click" Padding="8,2" MinHeight="26"
+                                            Background="{x:Bind local:Tints.SoftBrushOf(DestColor), Mode=OneWay}"
+                                            ToolTipService.ToolTip="Click to name this drive or change its colour">
+                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                            <Ellipse Width="10" Height="10" Fill="{x:Bind local:Tints.BrushOf(DestColor), Mode=OneWay}" VerticalAlignment="Center" />
+                                            <TextBlock Text="{x:Bind DestLabel, Mode=OneWay}" FontSize="12" FontWeight="SemiBold" />
+                                        </StackPanel>
+                                    </Button>
+                                    <Border Background="{ThemeResource AccentTintBrush}" CornerRadius="10" Padding="10,2" VerticalAlignment="Center">
+                                        <TextBlock Text="{x:Bind StatusText, Mode=OneWay}" FontSize="11" />
+                                    </Border>
+                                    <TextBlock Text="{x:Bind PercentText, Mode=OneWay}" FontSize="22" FontWeight="SemiBold" Foreground="{x:Bind local:Tints.BrushOf(DestColor), Mode=OneWay}" VerticalAlignment="Center" />
+                                    <TextBlock Text="{x:Bind SpeedText, Mode=OneWay}" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                </StackPanel>
+
+                                <!-- Where it comes from and where it goes -->
+                                <Grid Grid.Row="1" Grid.ColumnSpan="2" ColumnSpacing="8" RowSpacing="3" Margin="0,2,6,2">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="36" />
+                                        <ColumnDefinition Width="Auto" MaxWidth="260" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Grid.Row="0" Text="FROM" Style="{StaticResource PanelHeader}" VerticalAlignment="Center" />
+                                    <TextBlock Grid.Row="0" Grid.Column="1" TextReadingOrder="DetectFromContent" Text="{x:Bind FromName, Mode=OneWay}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"
+                                               ToolTipService.ToolTip="{x:Bind FromTip, Mode=OneWay}" />
+                                    <TextBlock Grid.Row="0" Grid.Column="2" Text="{x:Bind FromPath, Mode=OneWay}" Style="{StaticResource MutedText}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                                    <TextBlock Grid.Row="1" Text="TO" Style="{StaticResource PanelHeader}" VerticalAlignment="Center" />
+                                    <TextBlock Grid.Row="1" Grid.Column="1" TextReadingOrder="DetectFromContent" Text="{x:Bind ToName, Mode=OneWay}" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Grid.Row="1" Grid.Column="2" Text="{x:Bind ToPath, Mode=OneWay}" Style="{StaticResource MutedText}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                                </Grid>
+
+                                <ProgressBar Grid.Row="2" Grid.ColumnSpan="2" Minimum="0" Maximum="100" Margin="0,4,6,0"
+                                             Value="{x:Bind Percent, Mode=OneWay}"
+                                             Foreground="{x:Bind local:Tints.BrushOf(DestColor), Mode=OneWay}"
+                                             IsIndeterminate="{x:Bind IsScanning, Mode=OneWay}"
+                                             ShowPaused="{x:Bind IsPaused, Mode=OneWay}" />
+
+                                <local:SpeedGraph Grid.Row="3" Grid.ColumnSpan="2" Margin="0,6,6,2" Samples="{x:Bind SpeedHistory, Mode=OneWay}"
+                                                  Tint="{x:Bind local:Tints.ColorOf(DestColor), Mode=OneWay}" />
+
+                                <TextBlock Grid.Row="4" Grid.ColumnSpan="2" Text="{x:Bind Detail, Mode=OneWay}" FontSize="12" TextWrapping="Wrap" />
+                                <TextBlock Grid.Row="5" Grid.ColumnSpan="2" TextReadingOrder="DetectFromContent" Text="{x:Bind Current, Mode=OneWay}" Style="{StaticResource MutedText}" TextTrimming="CharacterEllipsis" />
+
+                                <Expander Grid.Row="6" Grid.ColumnSpan="2" Header="{x:Bind ItemsHeader, Mode=OneWay}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                                          Margin="0,2,6,0" Padding="8,4">
+                                    <ItemsControl ItemsSource="{x:Bind Items}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="m:JobItem">
+                                                <Grid Height="40" ColumnSpacing="10">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <FontIcon Glyph="{x:Bind Glyph}" FontSize="15" Foreground="{ThemeResource TextMutedBrush}" />
+                                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                        <TextBlock Text="{x:Bind Name}" TextReadingOrder="DetectFromContent" TextTrimming="CharacterEllipsis" />
+                                                        <TextBlock Text="{x:Bind Location}" Style="{StaticResource MutedText}" TextReadingOrder="DetectFromContent" TextTrimming="CharacterEllipsis" />
+                                                    </StackPanel>
+                                                    <TextBlock Grid.Column="2" Text="{x:Bind StatusText, Mode=OneWay}" Style="{StaticResource MutedText}" VerticalAlignment="Center" />
+                                                    <Button Grid.Column="3" Style="{StaticResource ToolButton}" Width="30" Height="30" MinHeight="30" Tag="{x:Bind}" Click="RemoveItem_Click"
+                                                            Visibility="{x:Bind CanRemove, Mode=OneWay}" ToolTipService.ToolTip="Remove this item from the transfer (stops it if it is being copied)">
+                                                        <FontIcon Glyph="&#xE74D;" FontSize="13" />
+                                                    </Button>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </Expander>
+
+                                <StackPanel Grid.Row="7" Grid.ColumnSpan="2" Orientation="Horizontal" Spacing="2" Margin="-8,2,0,0">
+                                    <Button Style="{StaticResource ToolButton}" Width="34" Height="34" Tag="{x:Bind}" Click="Pause_Click"
+                                            Visibility="{x:Bind CanPause, Mode=OneWay}" ToolTipService.ToolTip="Pause">
+                                        <FontIcon Glyph="&#xE769;" FontSize="14" />
+                                    </Button>
+                                    <Button Style="{StaticResource ToolButton}" Width="34" Height="34" Tag="{x:Bind}" Click="Resume_Click"
+                                            Visibility="{x:Bind CanResume, Mode=OneWay}" ToolTipService.ToolTip="Resume">
+                                        <FontIcon Glyph="&#xE768;" FontSize="14" />
+                                    </Button>
+                                    <Button Style="{StaticResource ToolButton}" Width="34" Height="34" Tag="{x:Bind}" Click="Cancel_Click"
+                                            Visibility="{x:Bind CanCancel, Mode=OneWay}" ToolTipService.ToolTip="Cancel this transfer">
+                                        <FontIcon Glyph="&#xE711;" FontSize="14" />
+                                    </Button>
+                                    <Button Style="{StaticResource ToolButton}" Width="34" Height="34" Tag="{x:Bind}" Click="SkipFile_Click"
+                                            Visibility="{x:Bind CanSkipFile, Mode=OneWay}" ToolTipService.ToolTip="Skip the file being copied now">
+                                        <FontIcon Glyph="&#xE893;" FontSize="14" />
+                                    </Button>
+                                    <Button Style="{StaticResource ToolButton}" Width="34" Height="34" Tag="{x:Bind}" Click="Open_Click"
+                                            ToolTipService.ToolTip="Open the destination folder">
+                                        <FontIcon Glyph="&#xE838;" FontSize="14" />
+                                    </Button>
+                                    <Button Style="{StaticResource GhostButton}" Tag="{x:Bind}" Click="Errors_Click" MinHeight="34"
+                                            Visibility="{x:Bind HasErrors, Mode=OneWay}">
+                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                            <FontIcon Glyph="&#xE7BA;" FontSize="13" Foreground="#E5484D" />
+                                            <TextBlock Text="{x:Bind ErrorsLabel, Mode=OneWay}" Foreground="#E5484D" />
+                                        </StackPanel>
+                                    </Button>
+                                    <Button Style="{StaticResource ToolButton}" Width="34" Height="34" Tag="{x:Bind}" Click="MoveUp_Click"
+                                            Visibility="{x:Bind CanMove, Mode=OneWay}" ToolTipService.ToolTip="Run earlier">
+                                        <FontIcon Glyph="&#xE70E;" FontSize="14" />
+                                    </Button>
+                                    <Button Style="{StaticResource ToolButton}" Width="34" Height="34" Tag="{x:Bind}" Click="MoveDown_Click"
+                                            Visibility="{x:Bind CanMove, Mode=OneWay}" ToolTipService.ToolTip="Run later">
+                                        <FontIcon Glyph="&#xE70D;" FontSize="14" />
+                                    </Button>
+                                    <Button Style="{StaticResource GhostButton}" Tag="{x:Bind}" Click="Retry_Click" MinHeight="34"
+                                            Visibility="{x:Bind CanRetry, Mode=OneWay}" ToolTipService.ToolTip="Run it again; what was already copied is skipped">
+                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                            <FontIcon Glyph="&#xE72C;" FontSize="13" />
+                                            <TextBlock Text="Retry" />
+                                        </StackPanel>
+                                    </Button>
+                                    <Button Style="{StaticResource ToolButton}" Width="34" Height="34" Tag="{x:Bind}" Click="Remove_Click"
+                                            Visibility="{x:Bind CanRemove, Mode=OneWay}" ToolTipService.ToolTip="Remove from the list">
+                                        <FontIcon Glyph="&#xE74D;" FontSize="14" />
+                                    </Button>
+                                </StackPanel>
+                            </Grid>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+            </Grid>
+        </Grid>
+    </Grid>
+</Window>

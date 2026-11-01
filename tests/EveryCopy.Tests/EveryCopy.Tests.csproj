@@ -1,0 +1,41 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <NoWarn>$(NoWarn);CA1416</NoWarn>
+    <RootNamespace>EveryCopy.Tests</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The engine is plain .NET, so the tests compile the real source files instead of referencing the WinUI app. -->
+    <Compile Include="..\..\Models\CopyJob.cs" Link="Engine\CopyJob.cs" />
+    <Compile Include="..\..\Services\CopyEngine.cs" Link="Engine\CopyEngine.cs" />
+    <Compile Include="..\..\Services\CopyQueue.cs" Link="Engine\CopyQueue.cs" />
+    <Compile Include="..\..\Services\NativeCopy.cs" Link="Engine\NativeCopy.cs" />
+    <Compile Include="..\..\Services\PathUtil.cs" Link="Engine\PathUtil.cs" />
+    <Compile Include="..\..\Services\LaunchRequest.cs" Link="Engine\LaunchRequest.cs" />
+    <Compile Include="..\..\Services\AppSettings.cs" Link="Engine\AppSettings.cs" />
+    <Compile Include="..\..\Services\NativeShell.cs" Link="Engine\NativeShell.cs" />
+    <Compile Include="..\..\Services\DriveKind.cs" Link="Engine\DriveKind.cs" />
+    <Compile Include="..\..\Services\JobStore.cs" Link="Engine\JobStore.cs" />
+    <Compile Include="..\..\Services\Log.cs" Link="Engine\Log.cs" />
+    <Compile Include="..\..\Services\Benchmark.cs" Link="Engine\Benchmark.cs" />
+    <Compile Include="..\..\Services\Destinations.cs" Link="Engine\Destinations.cs" />
+    <Compile Include="..\..\Services\HistoryStore.cs" Link="Engine\HistoryStore.cs" />
+    <Compile Include="..\..\Services\ContextMenu.cs" Link="Engine\ContextMenu.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="xunit" Version="2.9.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+  </ItemGroup>
+
+</Project>
