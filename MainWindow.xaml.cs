@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using EveryCopy.Models;
@@ -32,6 +32,7 @@ public sealed partial class MainWindow : Window
     private bool hiddenStart;
     private readonly TrayIcon? tray;
     private readonly PasteHook? pasteHook;
+    private readonly MenuPasteHook? menuPasteHook;
     private TaskbarProgress? taskbar;
     private string savedSignature = "";
     private bool wasBusy;
@@ -75,6 +76,7 @@ public sealed partial class MainWindow : Window
         VerifyBox.IsChecked = settings.Verify;
         MenuBox.IsChecked = ContextMenu.IsInstalled();
         AskBox.IsChecked = settings.AskWhichCopier;
+        DefaultBox.IsChecked = settings.UseAsDefault;
         WhenDoneBox.SelectedIndex = Math.Max(0, Array.IndexOf(WhenDoneChoices, settings.WhenDone));
         InterceptBox.IsChecked = settings.InterceptPaste;
         PopupBox.IsChecked = settings.ProgressPopup;
@@ -94,6 +96,14 @@ public sealed partial class MainWindow : Window
                     string? folder = PasteHook.TextBoxFocused(window) ? null : PasteHook.ResolveFolder(window, desktop);
                     if (folder == null) PasteHook.PassThrough();
                     else Handle(new LaunchRequest(Array.Empty<string>(), folder, false, false, true));
+                }));
+            menuPasteHook = new MenuPasteHook(
+                () => settings.InterceptPaste && (settings.AskWhichCopier || !settings.UseWindowsCopy),
+                (window, desktop) => DispatcherQueue.TryEnqueue(() =>
+                {
+                    string? folder = PasteHook.ResolveFolder(window, desktop);
+                    if (folder != null) Handle(new LaunchRequest(Array.Empty<string>(), folder, false, false, true));
+                    else ShowHint("EveryCopy could not tell which folder this is. Use Ctrl+V there, or choose the destination here.");
                 }));
         }
         catch (Exception ex) { Log.Write("Tray or Ctrl+V hook could not start", ex); }
@@ -873,6 +883,7 @@ public sealed partial class MainWindow : Window
 
         closeConfirmed = true;
         pasteHook?.Dispose();
+        menuPasteHook?.Dispose();
         tray?.Dispose();
         Close();
         Environment.Exit(0);
@@ -885,6 +896,35 @@ public sealed partial class MainWindow : Window
         settings.InterceptPaste = on;
         settings.Save();
         DispatcherQueue.TryEnqueue(() => InterceptBox.IsChecked = on);
+    }
+
+    private void DefaultBox_Click(object sender, RoutedEventArgs e)
+    {
+        bool on = DefaultBox.IsChecked == true;
+        settings.UseAsDefault = on;
+        if (on)
+        {
+            settings.InterceptPaste = true;
+            settings.AskWhichCopier = false;
+            settings.UseWindowsCopy = false;
+        }
+        settings.Save();
+        InterceptBox.IsChecked = settings.InterceptPaste;
+        AskBox.IsChecked = settings.AskWhichCopier;
+        if (!on) return;
+        try
+        {
+            ContextMenu.Install(Environment.ProcessPath ?? "");
+            Startup.Set(true, Environment.ProcessPath ?? "");
+            HideHint();
+        }
+        catch (Exception ex)
+        {
+            Log.Write("Default setup failed", ex);
+            ShowHint("EveryCopy is the default, but some Windows integration could not be set up: " + ex.Message);
+        }
+        MenuBox.IsChecked = ContextMenu.IsInstalled();
+        StartupBox.IsChecked = Startup.IsEnabled();
     }
 
     private void InterceptBox_Click(object sender, RoutedEventArgs e) => SetIntercept(InterceptBox.IsChecked == true);

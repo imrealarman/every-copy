@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Window
     x:Class="EveryCopy.MainWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -151,6 +151,8 @@
                             Margin="0,0,0,8" IsEnabled="False" Click="Start_Click" />
                     <Expander Header="Settings" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Padding="12,6">
                         <StackPanel Spacing="2">
+                            <CheckBox x:Name="DefaultBox" Content="Make EveryCopy my default copier" Click="DefaultBox_Click" FontWeight="SemiBold"
+                                      ToolTipService.ToolTip="Every copy and move you paste in Explorer (Ctrl+V or right-click, Paste) uses EveryCopy instead of the Windows copier. Turns on the tray, the right-click menu and start with Windows. Dragging files between windows is still done by Windows." />
                             <CheckBox x:Name="AskBox" Content="Ask each time: EveryCopy or Windows copy" Click="AskBox_Click"
                                       ToolTipService.ToolTip="When off, the last choice is used without asking. EveryCopy is the default." />
                             <CheckBox x:Name="InterceptBox" Content="Use EveryCopy when I press Ctrl+V in Explorer" Click="InterceptBox_Click"

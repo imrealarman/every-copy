@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Runtime.InteropServices;
 using EveryCopy.Models;
 using EveryCopy.Services;
@@ -30,6 +30,7 @@ public sealed partial class ProgressWindow : Window
     private readonly Action openApp;
     private bool detailed;
     private int shownHeight = -1;
+    private bool wasFrameless;
     private Microsoft.UI.Dispatching.DispatcherQueueTimer? closeTimer;
 
     [DllImport("user32.dll")] private static extern uint GetDpiForWindow(IntPtr hwnd);
@@ -69,6 +70,12 @@ public sealed partial class ProgressWindow : Window
     {
         ModeText.Text = detailed ? "Compact" : "Details";
         ModeIcon.Glyph = detailed ? "" : "";
+
+        // One file or folder in the compact view: no title bar or frame, just the card, like Windows' own small copy popup.
+        bool frameless = !detailed && queue.Jobs.Count <= 1;
+        if (AppWindow.Presenter is OverlappedPresenter p) p.SetBorderAndTitleBar(!frameless, !frameless);
+        Root.Padding = frameless ? new Thickness(6, 6, 6, 0) : new Thickness(14, 12, 14, 10);
+        if (frameless != wasFrameless) { wasFrameless = frameless; shownHeight = -1; } // re-measure when the frame comes or goes
 
         double scale = GetDpiForWindow(WindowNative.GetWindowHandle(this)) / 96.0;
         var work = DisplayArea.GetFromWindowId(AppWindow.Id, DisplayAreaFallback.Primary).WorkArea;

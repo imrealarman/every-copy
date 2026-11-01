@@ -25,6 +25,8 @@ public sealed class AppSettings
     public bool UseWindowsCopy { get; set; }
     /// <summary>Ctrl+V in Explorer goes through EveryCopy (needs EveryCopy running in the tray).</summary>
     public bool InterceptPaste { get; set; }
+    /// <summary>EveryCopy is the default copier: Ctrl+V and the right-click Paste in Explorer both go through it, without asking.</summary>
+    public bool UseAsDefault { get; set; }
     /// <summary>False until the first-run questions (Ctrl+V takeover, right-click menu, start with Windows) have been answered.</summary>
     public bool FirstRunDone { get; set; }
     /// <summary>What to do when every transfer has finished without errors: "nothing", "sleep" or "shutdown".</summary>
