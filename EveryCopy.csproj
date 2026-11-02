@@ -8,7 +8,7 @@
     <AssemblyName>EveryCopy</AssemblyName>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Assets\AppIcon.ico</ApplicationIcon>
-    <Version>1.1.0</Version>
+    <Version>1.1.1</Version>
     <Authors>Arman Soltani</Authors>
     <Company>Arman Soltani</Company>
     <Product>EveryCopy</Product>

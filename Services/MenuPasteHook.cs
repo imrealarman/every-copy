@@ -19,8 +19,8 @@ public sealed class MenuPasteHook : IDisposable
     private const int VkEscape = 0x1B, VkP = 0x50, VkControl = 0x11, VkMenu = 0x12;
     private const uint CfHDrop = 15, LlmhfInjected = 1, LlkhfInjected = 0x10;
     private static readonly UIntPtr OwnMarker = (UIntPtr)0x45434F51;
-    private static readonly string[] PasteNames = { "Paste" };
-    private static readonly string[] BackgroundMarkers = { "Refresh" }; // only the empty-space menu has it: item menus paste into a folder we cannot name
+    private static readonly string[] PasteNames = { "Paste", "Paste (Ctrl+V)", "Paste Ctrl+V" };
+    private static readonly string[] BackgroundMarkers = { "Refresh", "Refresh (F5)", "View", "Sort by" }; // only the empty-space menu has it: item menus paste into a folder we cannot name
 
     private delegate IntPtr HookProc(int code, IntPtr wParam, IntPtr lParam);
     private delegate bool EnumProc(IntPtr hwnd, IntPtr lParam);
@@ -201,6 +201,7 @@ public sealed class MenuPasteHook : IDisposable
         IntPtr window = GetForegroundWindow();
         string cls = ClassOf(window);
         bool desktop = cls is "Progman" or "WorkerW";
+        Log.Write($"Menu Paste: right-click, foreground class {cls}");
         if (cls != "CabinetWClass" && !desktop) return;
         if (Interlocked.Exchange(ref searching, 1) == 1) return; // already looking
         Task.Run(() =>
@@ -235,16 +236,17 @@ public sealed class MenuPasteHook : IDisposable
 
             foreach (IntPtr menu in candidates)
             {
-                if (automation.ElementFromHandle(menu, out var root) != 0 || root == null) continue;
+                if (automation.ElementFromHandle(menu, out var root) != 0 || root == null) { Log.Write($"Menu Paste: cannot inspect {ClassOf(menu)}"); continue; }
                 var rect = FindRect(automation, root, PasteNames);
-                if (rect == null) continue;
                 bool background = BackgroundMarkers.Any(n => FindRect(automation, root, new[] { n }) != null);
+                Log.Write($"Menu Paste: {ClassOf(menu)} paste={(rect != null)} background={background}");
+                if (rect == null) continue;
                 if (!background) return; // an item menu: Paste there means "into that folder", which Windows resolves
                 var r = rect.Value;
                 found = new Found(menu, r.l, r.t, r.r, r.b, explorer, desktop, Environment.TickCount64 + 60_000);
                 return;
             }
-            if (!Down(0x02) && attempt > 3 && candidates.Count == 0) return; // no menu came up
+            if (!Down(0x02) && attempt > 3 && candidates.Count == 0) { Log.Write("Menu Paste: no menu window found"); return; } // no menu came up
         }
     }
 
